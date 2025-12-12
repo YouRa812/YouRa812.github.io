@@ -277,7 +277,7 @@
         let isDemoMode = false;
         let isSpinning = false;
         let spinIntervals = [];
-        let currentUserId = null; // Для хранения ID, переданного с бэкенда
+        let currentUserId = null; 
 
         // === КОНСТАНТЫ СКОРОСТИ ===
         const SPIN_DURATION = 1000; 
@@ -298,6 +298,8 @@
                     return JSON.parse(decodedJson); 
                 } catch (e) {
                     console.error("Failed to parse start_param", e);
+                    // Дополнительный вывод при ошибке парсинга
+                    statusText.textContent = `СБОЙ ПАРСИНГА: ${e.message}`;
                 }
             }
             return null;
@@ -324,7 +326,7 @@
             });
         }
 
-        // --- ИЗМЕНЕННАЯ ФУНКЦИЯ: ПРОВЕРКА СРЕДЫ И СИНХРОНИЗАЦИЯ БАЛАНСА ---
+        // --- КРИТИЧЕСКАЯ ФУНКЦИЯ ДЛЯ СИНХРОНИЗАЦИИ ---
         function checkEnvironment() {
             let initialBalance = '0';
             
@@ -340,20 +342,36 @@
                 Telegram.WebApp.expand();
 
                 const data = parseInitData();
+                
                 if (data && data.balance !== undefined) {
+                    // УСПЕХ: Данные получены и баланс есть
                     initialBalance = data.balance; 
-                    currentUserId = data.user_id; // Считываем ID пользователя
-                    statusText.textContent = `СИНХРОНИЗИРОВАНО. ID: ${currentUserId}`;
+                    currentUserId = data.user_id; 
+                    statusText.textContent = `СИНХРОНИЗАЦИЯ УСПЕШНА. БАЛАНС: ${initialBalance}`; 
                 } else {
-                    // Резервный статус, если данные не пришли
-                    statusText.textContent = "Синхронизация: Баланс 0"; 
+                    // СБОЙ: Баланс не найден
+                    const urlParams = new URLSearchParams(Telegram.WebApp.initData);
+                    const startParam = urlParams.get('start_param');
+
+                    if (Telegram.WebApp.initData && startParam) {
+                         // initData есть, start_param есть, но JSON не парсится (ошибка парсинга)
+                         statusText.textContent = "СБОЙ: Ошибка JSON. Баланс 0.";
+                         console.error("Failed to parse start_param:", startParam);
+                    } else if (Telegram.WebApp.initData && !startParam) {
+                         // initData есть, но start_param нет (бот не передал данные)
+                         statusText.textContent = "СБОЙ: initData есть, start_param НЕТ. Баланс 0.";
+                         statusText.style.color = "red";
+                    } else {
+                         // initData полностью отсутствует (запущен вне Telegram/неправильный URL)
+                         statusText.textContent = "СБОЙ: initData отсутствует. Баланс 0.";
+                         statusText.style.color = "red";
+                    }
                 }
             }
             
-            balanceDisplay.textContent = initialBalance; // Устанавливаем баланс
+            balanceDisplay.textContent = initialBalance; 
             initializeStrips(); 
         }
-        // checkEnvironment() вызывается в конце файла.
 
         // === ИЗМЕНЕНИЕ СТАВКИ ===
         function changeBet(amount) {
