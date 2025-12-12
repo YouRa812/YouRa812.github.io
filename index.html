@@ -278,11 +278,28 @@
         let isSpinning = false;
         let spinIntervals = [];
 
-        // === КОНСТАНТЫ СКОРОСТИ (УМЕНЬШЕНЫ) ===
-        const SPIN_DURATION = 1000; // 1 секунда (было 2000 мс)
-        const STOP_DELAY = 250;     // 250 мс между остановками (было 500 мс)
-        const SLOWDOWN_TIME = 400;  // 400 мс (время CSS transition, было 800 мс)
+        // === КОНСТАНТЫ СКОРОСТИ ===
+        const SPIN_DURATION = 1000; 
+        const STOP_DELAY = 250;     
+        const SLOWDOWN_TIME = 400;  
 
+        // --- НОВАЯ ФУНКЦИЯ: ПАРСИНГ ДАННЫХ ОТ БОТА ---
+        function parseInitData() {
+            if (!Telegram.WebApp.initData) return null;
+            const urlParams = new URLSearchParams(Telegram.WebApp.initData);
+            
+            const startParam = urlParams.get('start_param');
+            if (startParam) {
+                try {
+                    // Декодирование и парсинг JSON-объекта, переданного из Python
+                    const decodedJson = decodeURIComponent(startParam);
+                    return JSON.parse(decodedJson);
+                } catch (e) {
+                    console.error("Failed to parse start_param", e);
+                }
+            }
+            return null;
+        }
 
         // === ИНИЦИАЛИЗАЦИЯ (Заполнение полос символами) ===
         function initializeStrips() {
@@ -305,21 +322,36 @@
             });
         }
 
-        // === ПРОВЕРКА СРЕДЫ (Демо или ТГ) ===
+        // --- ИЗМЕНЕННАЯ ФУНКЦИЯ: ПРОВЕРКА СРЕДЫ И СИНХРОНИЗАЦИЯ БАЛАНСА ---
         function checkEnvironment() {
+            let initialBalance = '0';
+            
             if (!Telegram.WebApp.initData) {
+                // Демо-режим, если запущен не в Telegram
                 isDemoMode = true;
                 demoBadge.style.display = 'block';
-                balanceDisplay.textContent = '1000'; 
+                initialBalance = '1000'; 
                 statusText.textContent = "DEMO READY";
             } else {
+                // Режим Telegram Web App
                 Telegram.WebApp.ready();
                 Telegram.WebApp.expand();
-                balanceDisplay.textContent = '0'; 
+
+                const data = parseInitData();
+                if (data && data.balance !== undefined) {
+                    // Устанавливаем баланс, переданный ботом
+                    initialBalance = data.balance; 
+                    statusText.textContent = "СИНХРОНИЗИРОВАНО";
+                } else {
+                    // Резервный статус, если данные не пришли
+                    statusText.textContent = "Синхронизация: Баланс 0"; 
+                }
             }
+            
+            balanceDisplay.textContent = initialBalance; // Устанавливаем баланс
             initializeStrips(); 
         }
-        checkEnvironment();
+        // checkEnvironment() вызывается в конце файла.
 
         // === ИЗМЕНЕНИЕ СТАВКИ ===
         function changeBet(amount) {
@@ -363,6 +395,7 @@
                 strip.style.transform = `translateY(0)`; // Сброс для начала вращения
             });
 
+            // Снимаем ставку до подтверждения ботом
             balanceDisplay.textContent = currentBal - currentBet;
 
             // 1. Запускаем быструю JS прокрутку для каждой полосы
@@ -418,8 +451,13 @@
                         statusText.textContent = "DEMO LOSE";
                     }
                 } else {
-                    statusText.textContent = isVisualWin ? "ПРОВЕРКА..." : "ПРОИГРЫШ";
+                    // Отправляем результат боту для проверки баланса и выплаты
+                    statusText.textContent = isVisualWin ? "ПРОВЕРКА ВЫИГРЫША..." : "ПРОИГРЫШ";
                     sendToBot(isVisualWin, payoutData);
+                    
+                    // ВАЖНО: После отправки, пользователь должен проверить ЛС бота
+                    // для получения окончательного баланса и подтверждения выигрыша.
+                    // Мы не можем обновить баланс на фронте до ответа бота.
                 }
             }, SPIN_DURATION + (STOP_DELAY * 2) + SLOWDOWN_TIME + 100); 
         }
