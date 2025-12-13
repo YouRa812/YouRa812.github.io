@@ -3,112 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DARKSS Slot Machine</title>
+    <title>DARKSS Slot</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
-    
     <style>
-        /* === 1. ГЛОБАЛЬНЫЕ СТИЛИ === */
+        /* СТИЛИ */
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
-
-        body {
-            background-color: #050505; color: #fff; font-family: 'Orbitron', sans-serif;
-            display: flex; flex-direction: column; align-items: center; justify-content: space-between;
-            height: 100vh; margin: 0; padding: 10px 0 20px 0; overflow: hidden; position: relative;
-        }
-
-        /* === 2. АНИМИРОВАННЫЙ ФОН (CYBERPUNK GRID) === */
-        .retro-bg {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(to bottom, #000000 0%, #1a0b2e 100%); z-index: -2;
-        }
-        .grid-plane {
-            position: absolute; bottom: -30%; left: -50%; width: 200%; height: 100%;
-            background-image: 
-                linear-gradient(rgba(188, 19, 254, 0.3) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(188, 19, 254, 0.3) 1px, transparent 1px);
-            background-size: 40px 40px; transform: perspective(500px) rotateX(60deg);
-            animation: moveGrid 1s linear infinite; z-index: -1;
-            box-shadow: 0 -50px 100px rgba(188, 19, 254, 0.2);
-        }
-        @keyframes moveGrid { 0% { background-position: 0 0; } 100% { background-position: 0 40px; } }
-
-        /* === 3. ДЕМО ПЛАШКА === */
-        .demo-badge {
-            display: none; position: absolute; top: 10px; right: 10px;
-            background: #ff0000; color: white; padding: 4px 10px; border-radius: 4px;
-            font-size: 10px; font-weight: bold; z-index: 100;
-        }
-
-        /* === 4. ЗАГОЛОВОК === */
+        body { background-color: #050505; color: #fff; font-family: 'Orbitron', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: space-between; height: 100vh; margin: 0; padding: 10px 0 20px 0; overflow: hidden; position: relative; }
+        .retro-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, #000000 0%, #1a0b2e 100%); z-index: -2; }
         .header { text-align: center; margin-bottom: 5px; z-index: 2; }
         .title-neon { font-size: 32px; font-weight: 900; letter-spacing: 3px; color: #fff; text-shadow: 0 0 10px #bc13fe, 0 0 20px #bc13fe; margin: 0; }
         .subtitle { font-size: 10px; color: #00ffff; letter-spacing: 4px; margin-top: 2px; }
-
-        /* === 5. СЛОТЫ */
-        .slots-wrapper {
-            display: flex; gap: 10px; padding: 15px;
-            background: rgba(10, 10, 10, 0.85); border: 2px solid #bc13fe; border-radius: 15px;
-            box-shadow: 0 0 40px rgba(188, 19, 254, 0.2); z-index: 2; margin-top: 10px;
-        }
-        .reel {
-            width: 85px; height: 130px; background: #000; border: 2px solid #00ffff;
-            border-radius: 8px; overflow: hidden; position: relative;
-        }
-        
-        /* Полоса прокрутки */
-        .reel-strip { 
-            display: flex; 
-            flex-direction: column; 
-            position: absolute;
-            top: 0; left: 0; width: 100%;
-            transition: transform 0.4s cubic-bezier(0.1, 1, 0.5, 1);
-            opacity: 1;
-        }
-        .reel-strip div { 
-            height: 130px; display: flex; align-items: center; justify-content: center; 
-            font-size: 55px; 
-        }
-        
-        /* Состояние вращения */
-        .spinning .reel-strip { 
-            transition: none !important;
-            filter: blur(3px);
-            opacity: 1; 
-        }
-        
-        /* Символ результата */
-        .result-symbol {
-            width: 100%; height: 100%; position: absolute; top: 0; left: 0;
-            display: none; align-items: center; justify-content: center;
-            font-size: 60px; filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
-        }
-        .result-symbol.active {
-            display: flex;
-            animation: bounceIn 0.4s;
-        }
+        .slots-wrapper { display: flex; gap: 10px; padding: 15px; background: rgba(10, 10, 10, 0.85); border: 2px solid #bc13fe; border-radius: 15px; box-shadow: 0 0 40px rgba(188, 19, 254, 0.2); z-index: 2; margin-top: 10px; }
+        .reel { width: 85px; height: 130px; background: #000; border: 2px solid #00ffff; border-radius: 8px; overflow: hidden; position: relative; }
+        .reel-strip { display: flex; flex-direction: column; position: absolute; top: 0; left: 0; width: 100%; transition: transform 0.4s cubic-bezier(0.1, 1, 0.5, 1); }
+        .reel-strip div { height: 130px; display: flex; align-items: center; justify-content: center; font-size: 55px; }
+        .spinning .reel-strip { filter: blur(3px); transition: none !important; }
+        .result-symbol { width: 100%; height: 100%; position: absolute; top: 0; left: 0; display: none; align-items: center; justify-content: center; font-size: 60px; filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.5)); }
+        .result-symbol.active { display: flex; animation: bounceIn 0.4s; }
         @keyframes bounceIn { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); } }
-
-        /* === 6. ТАБЛИЦА ВЫПЛАТ === */
-        .paytable {
-            width: 95%; max-width: 400px; background: rgba(10, 10, 10, 0.9); border: 1px solid #7a00cc;
-            border-radius: 10px; padding: 10px; margin-top: 10px; z-index: 2;
-        }
-        .paytable h4 { font-size: 14px; text-align: center; color: #00ffff; text-shadow: 0 0 5px #00ffff; margin: 0 0 8px 0; letter-spacing: 2px; }
-        .paytable table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: center; }
-        .paytable th, .paytable td { padding: 5px; border-bottom: 1px solid rgba(188, 19, 254, 0.3); }
-        .paytable th { color: #bc13fe; font-weight: bold; font-size: 11px; text-transform: uppercase; }
-        .paytable td { color: #ccc; }
-        .paytable .symbol-row { font-size: 20px; }
-        .paytable .multiplier { color: #fff; font-weight: bold; text-shadow: 0 0 3px #00ffff; }
-
-        /* === 7. ПАНЕЛЬ УПРАВЛЕНИЯ === */
-        .controls {
-            width: 95%; max-width: 400px; background: rgba(15, 15, 15, 0.95);
-            border-top: 2px solid #00ffff; border-radius: 20px 20px 0 0; padding: 20px;
-            display: flex; flex-direction: column; gap: 15px; box-shadow: 0 -5px 30px rgba(0, 255, 255, 0.15);
-            z-index: 2; margin-top: auto;
-        }
+        .controls { width: 95%; max-width: 400px; background: rgba(15, 15, 15, 0.95); border-top: 2px solid #00ffff; border-radius: 20px 20px 0 0; padding: 20px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 -5px 30px rgba(0, 255, 255, 0.15); z-index: 2; margin-top: auto; }
         .info-row { display: flex; justify-content: space-between; align-items: center; background: #000; padding: 8px 15px; border-radius: 8px; border: 1px solid #333; }
         .info-label { font-size: 9px; color: #888; letter-spacing: 1px; }
         .info-value { font-size: 16px; color: #bc13fe; text-shadow: 0 0 5px rgba(188, 19, 254, 0.5); }
@@ -119,35 +33,16 @@
         .bet-label { font-size: 8px; color: #666; }
         .bet-num { font-size: 14px; color: #fff; font-weight: bold; }
         .btn-spin { flex-grow: 1; border: none; border-radius: 10px; background: linear-gradient(135deg, #bc13fe 0%, #7a00cc 100%); color: #fff; font-size: 20px; letter-spacing: 2px; font-family: 'Orbitron', sans-serif; font-weight: 900; cursor: pointer; box-shadow: 0 0 15px rgba(188, 19, 254, 0.4); transition: transform 0.1s; }
-        .btn-topup { width: 50px; background: #111; border: 1px solid #00ffff; border-radius: 10px; color: #00ffff; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-
-        /* === 8. МОДАЛКА === */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9);
-            backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center;
-            z-index: 2000; opacity: 0; transition: opacity 0.3s;
-        }
-        .modal {
-            background: #111; border: 2px solid #bc13fe; padding: 25px; border-radius: 15px;
-            text-align: center; width: 85%; box-shadow: 0 0 30px rgba(188, 19, 254, 0.2);
-            transform: scale(0.9); transition: transform 0.3s;
-        }
-        .modal h3 { color: #bc13fe; margin-top: 0; }
-        .modal p { color: #ccc; font-size: 13px; line-height: 1.4; }
-        .btn-close {
-            margin-top: 15px; padding: 8px 25px; background: transparent; border: 1px solid #00ffff;
-            color: #00ffff; border-radius: 20px; font-family: 'Orbitron', sans-serif; cursor: pointer;
-        }
-        .modal-overlay.active { display: flex; opacity: 1; }
-        .modal-overlay.active .modal { transform: scale(1); }
+        .paytable { width: 95%; max-width: 400px; background: rgba(10, 10, 10, 0.9); border: 1px solid #7a00cc; border-radius: 10px; padding: 10px; margin-top: 10px; z-index: 2; }
+        .paytable h4 { font-size: 14px; text-align: center; color: #00ffff; margin: 0 0 8px 0; }
+        .paytable table { width: 100%; font-size: 12px; text-align: center; color: #ccc; }
+        #demoBadge { display: none; position: absolute; top: 10px; right: 10px; background: #ff0000; color: white; padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; z-index: 100; }
     </style>
 </head>
 <body>
 
     <div class="retro-bg"></div>
-    <div class="grid-plane"></div>
-
-    <div id="demoBadge" class="demo-badge">DEMO</div>
+    <div id="demoBadge">DEMO</div>
 
     <div class="header">
         <h1 class="title-neon">DARKSS</h1>
@@ -155,48 +50,14 @@
     </div>
 
     <div class="slots-wrapper">
-        <div class="reel" id="reel-1">
-            <div class="reel-strip" id="strip-1"></div>
-            <div class="result-symbol" id="result-1">⚡</div>
-        </div>
-        <div class="reel" id="reel-2">
-            <div class="reel-strip" id="strip-2"></div>
-            <div class="result-symbol" id="result-2">⚡</div>
-        </div>
-        <div class="reel" id="reel-3">
-            <div class="reel-strip" id="strip-3"></div>
-            <div class="result-symbol" id="result-3">⚡</div>
-        </div>
+        <div class="reel" id="reel-1"><div class="reel-strip" id="strip-1"></div><div class="result-symbol" id="result-1">⚡</div></div>
+        <div class="reel" id="reel-2"><div class="reel-strip" id="strip-2"></div><div class="result-symbol" id="result-2">⚡</div></div>
+        <div class="reel" id="reel-3"><div class="reel-strip" id="strip-3"></div><div class="result-symbol" id="result-3">⚡</div></div>
     </div>
 
     <div class="paytable">
-        <h4>ТАБЛИЦА ВЫПЛАТ (x Ставка)</h4>
-        <table>
-            <thead>
-                <tr>
-                    <th>СИМВОЛ (3x)</th>
-                    <th>КОЭФФИЦИЕНТ</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td class="symbol-row">🌙 🧭 🚢 🦉</td>
-                    <td class="multiplier">x2</td>
-                </tr>
-                <tr>
-                    <td class="symbol-row">⚡</td>
-                    <td class="multiplier">x5</td>
-                </tr>
-                <tr>
-                    <td class="symbol-row">💎</td>
-                    <td class="multiplier">x10</td>
-                </tr>
-                <tr>
-                    <td class="symbol-row">7️⃣</td>
-                    <td class="multiplier">x20</td>
-                </tr>
-            </tbody>
-        </table>
+        <h4>ТАБЛИЦА ВЫПЛАТ</h4>
+        <table><tr><td>🌙 🧭 🚢 🦉 (x2)</td><td>⚡ (x5)</td><td>💎 (x10)</td><td>7️⃣ (x20)</td></tr></table>
     </div>
 
     <div class="controls">
@@ -207,322 +68,149 @@
             </div>
             <div style="text-align: right;">
                 <div class="info-label">СТАТУС</div>
-                <div class="info-value" id="statusText" style="font-size: 11px; color: #fff;">ГОТОВ</div>
+                <div class="info-value" id="statusText" style="font-size: 11px; color: #fff;">ЗАГРУЗКА...</div>
             </div>
         </div>
 
         <div class="buttons-row">
             <div class="bet-control">
                 <button class="bet-btn" onclick="changeBet(-10)">-</button>
-                <div class="bet-display">
-                    <span class="bet-label">BET</span>
-                    <span class="bet-num" id="betAmountDisplay">100</span>
-                </div>
+                <div class="bet-display"><span class="bet-label">BET</span><span class="bet-num" id="betAmountDisplay">100</span></div>
                 <button class="bet-btn" onclick="changeBet(10)">+</button>
             </div>
-
             <button class="btn-spin" id="spinButton" onclick="startSpin()">SPIN</button>
-            <button class="btn-topup" onclick="openModal()">+</button>
-        </div>
-    </div>
-
-    <div class="modal-overlay" id="topupModal">
-        <div class="modal">
-            <h3>ПОПОЛНЕНИЕ</h3>
-            <p>Система автоматического ввода временно недоступна.</p>
-            <p style="color: #00ffff">Свяжитесь с админом для покупки Бабок.</p>
-            <button class="btn-close" onclick="closeModal()">OK</button>
         </div>
     </div>
 
     <script>
-        const symbols = ['🌙', '🧭', '🚢', '⚡', '🦉', '💎', '7️⃣']; 
-        const reelSymbolsCount = 30; 
-        const symbolHeight = 130; 
+        const symbols = ['🌙', '🧭', '🚢', '⚡', '🦉', '💎', '7️⃣'];
+        const reelSymbolsCount = 30; const symbolHeight = 130;
+        let currentBet = 100; const minBet = 10; const maxBet = 1000;
+        let isSpinning = false; let currentUserId = null; let isDemoMode = false;
         
-        let currentBet = 100;
-        const minBet = 10;
-        const maxBet = 1000;
-        
-        // Карта выплат используется только для визуализации и DEMO-режима
-        const payoutMap = {
-            '🌙': 2, '🧭': 2, '🚢': 2, '🦉': 2, 
-            '⚡': 5,
-            '💎': 10,
-            '7️⃣': 20
-        };
-
-        const reels = [
-            document.getElementById('reel-1'),
-            document.getElementById('reel-2'),
-            document.getElementById('reel-3')
-        ];
-        const strips = [
-            document.getElementById('strip-1'),
-            document.getElementById('strip-2'),
-            document.getElementById('strip-3')
-        ];
-        const resultSymbols = [
-            document.getElementById('result-1'),
-            document.getElementById('result-2'),
-            document.getElementById('result-3')
-        ];
-
+        const strips = [document.getElementById('strip-1'), document.getElementById('strip-2'), document.getElementById('strip-3')];
+        const resultSymbols = [document.getElementById('result-1'), document.getElementById('result-2'), document.getElementById('result-3')];
         const balanceDisplay = document.getElementById('balanceDisplay');
-        const betDisplay = document.getElementById('betAmountDisplay');
         const statusText = document.getElementById('statusText');
-        const spinButton = document.getElementById('spinButton');
-        const modal = document.getElementById('topupModal');
-        const demoBadge = document.getElementById('demoBadge');
         
-        let isDemoMode = false;
-        let isSpinning = false;
-        let spinIntervals = [];
-        let currentUserId = null; 
-
-        // === КОНСТАНТЫ СКОРОСТИ ===
-        const SPIN_DURATION = 1000; 
-        const STOP_DELAY = 250;     
-        const SLOWDOWN_TIME = 400;  
-
-
-        // --- ИСПРАВЛЕНИЕ СИНХРОНИЗАЦИИ: ПРАВИЛЬНЫЙ ПАРСИНГ ДАННЫХ ОТ БОТА ---
+        // --- 1. ПАРСИНГ ДАННЫХ (СИНХРОНИЗАЦИЯ) ---
         function parseInitData() {
             if (!Telegram.WebApp.initData) return null;
-            
-            // 1. Используем initData для поиска start_param
             const urlParams = new URLSearchParams(Telegram.WebApp.initData);
             const startParam = urlParams.get('start_param');
-            
             if (startParam) {
                 try {
-                    // 2. Декодируем и парсим JSON-объект
-                    const decodedJson = decodeURIComponent(startParam);
-                    return JSON.parse(decodedJson); 
-                } catch (e) {
-                    console.error("Failed to parse start_param", e);
-                    // В случае ошибки парсинга, возвращаем null
-                }
+                    return JSON.parse(decodeURIComponent(startParam));
+                } catch (e) { console.error(e); }
             }
             return null;
         }
 
-
-        // === ИНИЦИАЛИЗАЦИЯ (Заполнение полос символами) ===
-        function initializeStrips() {
-            strips.forEach((strip) => {
-                strip.innerHTML = '';
-                // Генерируем символы
-                for (let i = 0; i < reelSymbolsCount; i++) {
-                    const symbol = symbols[Math.floor(Math.random() * symbols.length)];
-                    const div = document.createElement('div');
-                    div.textContent = symbol;
-                    strip.appendChild(div);
-                }
-                // Устанавливаем полосу в позицию, чтобы видеть финальный символ
-                strip.style.transform = `translateY(${-symbolHeight * (reelSymbolsCount - 1)}px)`;
-            });
-            // Устанавливаем начальное значение и показываем результат
-            resultSymbols.forEach(el => {
-                el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
-                el.classList.add('active'); 
-            });
-        }
-
-        // --- КРИТИЧЕСКАЯ ФУНКЦИЯ ДЛЯ СИНХРОНИЗАЦИИ ---
         function checkEnvironment() {
-            let initialBalance = '0';
-            
             if (!Telegram.WebApp.initData) {
-                // Демо-режим
-                isDemoMode = true;
-                demoBadge.style.display = 'block';
-                initialBalance = '1000'; 
-                statusText.textContent = "DEMO READY";
+                isDemoMode = true; document.getElementById('demoBadge').style.display = 'block';
+                balanceDisplay.textContent = '1000'; statusText.textContent = "DEMO MODE";
             } else {
-                // Режим Telegram Web App
-                Telegram.WebApp.ready();
-                Telegram.WebApp.expand();
-
+                Telegram.WebApp.ready(); Telegram.WebApp.expand();
                 const data = parseInitData();
-                
                 if (data && data.balance !== undefined) {
-                    // УСПЕХ: Данные получены и баланс есть
-                    initialBalance = data.balance; 
-                    currentUserId = data.user_id; 
-                    statusText.textContent = `СИНХРОНИЗАЦИЯ УСПЕШНА. ID: ${currentUserId}`; 
+                    balanceDisplay.textContent = data.balance;
+                    currentUserId = data.user_id;
+                    statusText.textContent = `СИНХРОНИЗАЦИЯ УСПЕШНА. ID: ${currentUserId}`;
                     statusText.style.color = "#00ffff";
                 } else {
-                    // СБОЙ: Баланс не найден (Диагностика сбоя)
-                    const urlParams = new URLSearchParams(Telegram.WebApp.initData || '');
-                    const startParam = urlParams.get('start_param');
-
-                    if (Telegram.WebApp.initData && startParam) {
-                         statusText.textContent = "СБОЙ: Ошибка JSON. Баланс 0.";
-                         statusText.style.color = "red";
-                    } else if (Telegram.WebApp.initData && !startParam) {
-                         // ЭТО БЫЛА ВАША ПРОБЛЕМА: Бот не передал start_param в URL WebApp
-                         statusText.textContent = "СБОЙ: initData есть, start_param НЕТ. Баланс 0.";
-                         statusText.style.color = "red";
-                    } else {
-                         statusText.textContent = "СБОЙ: initData отсутствует. Баланс 0.";
-                         statusText.style.color = "red";
-                    }
+                    statusText.textContent = "СБОЙ: БАЛАНС НЕ ПОЛУЧЕН";
+                    statusText.style.color = "red";
                 }
             }
-            
-            balanceDisplay.textContent = initialBalance; 
-            initializeStrips(); 
+            initializeStrips();
         }
 
-        // === ИЗМЕНЕНИЕ СТАВКИ ===
+        // --- 2. ЛОГИКА ИГРЫ ---
+        function initializeStrips() {
+            strips.forEach(strip => {
+                strip.innerHTML = '';
+                for (let i = 0; i < reelSymbolsCount; i++) {
+                    const div = document.createElement('div');
+                    div.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+                    strip.appendChild(div);
+                }
+                strip.style.transform = `translateY(${-symbolHeight * (reelSymbolsCount - 1)}px)`;
+            });
+            resultSymbols.forEach(el => el.classList.add('active'));
+        }
+
         function changeBet(amount) {
             if (isSpinning) return;
             let newBet = currentBet + amount;
-            newBet = Math.round(newBet / 10) * 10;
-
-            if (newBet < minBet) newBet = minBet;
-            if (newBet > maxBet) newBet = maxBet;
-            
-            currentBet = newBet;
-            betDisplay.textContent = currentBet;
+            if (newBet >= minBet && newBet <= maxBet) {
+                currentBet = newBet;
+                document.getElementById('betAmountDisplay').textContent = currentBet;
+            }
         }
-
-        // === МОДАЛКА ===
-        function openModal() { modal.classList.add('active'); }
-        function closeModal() { modal.classList.remove('active'); }
-
-        // === ЛОГИКА АНИМАЦИИ (JS-КОНТРОЛЬ) ===
 
         function startSpin() {
             if (isSpinning) return;
-
-            let currentBal = parseInt(balanceDisplay.textContent) || 0;
-            
-            if (currentBal < currentBet) {
-                statusText.textContent = "МАЛО БАБОК";
-                statusText.style.color = "red";
-                return;
-            }
+            let bal = parseInt(balanceDisplay.textContent);
+            if (bal < currentBet && !isDemoMode) { statusText.textContent = "НЕТ БАБОК"; return; }
 
             isSpinning = true;
-            spinButton.disabled = true;
+            document.getElementById('spinButton').disabled = true;
             statusText.textContent = "КРУТИМ...";
-            statusText.style.color = "#00ffff";
+            
+            // Визуально списываем ставку для красоты (но реальный баланс считает бот)
+            balanceDisplay.textContent = bal - currentBet;
 
-            // Скрываем статику, показываем и запускаем полосы
             resultSymbols.forEach(el => el.classList.remove('active'));
             strips.forEach(strip => {
-                strip.classList.add('spinning'); 
-                strip.style.transform = `translateY(0)`; 
+                strip.classList.add('spinning');
+                strip.style.transform = `translateY(0)`;
+                // CSS анимация вращения
+                let y = 0;
+                strip.dataset.interval = setInterval(() => {
+                    y -= symbolHeight; if (y <= -(reelSymbolsCount * symbolHeight)) y = 0;
+                    strip.style.transform = `translateY(${y}px)`;
+                }, 50);
             });
 
-            // !!! ВАЖНО: Мы не меняем баланс здесь. ЭТО ДЕЛАЕТ ТОЛЬКО БЭКЕНД !!!
-            // balanceDisplay.textContent = currentBal - currentBet; // УДАЛЕНО для безопасности
-
-            // 1. Запускаем быструю JS прокрутку для каждой полосы
-            spinIntervals = strips.map((strip) => {
-                let currentY = 0;
-                
-                return setInterval(() => {
-                    currentY -= symbolHeight; 
-                    if (currentY <= - (reelSymbolsCount * symbolHeight)) {
-                        currentY = 0;
-                    }
-                    strip.style.transform = `translateY(${currentY}px)`;
-                }, 50); 
-            });
-
-            // 2. Определяем результат через SPIN_DURATION
-            setTimeout(() => determineResult(), SPIN_DURATION);
+            setTimeout(stopSpin, 1000);
         }
 
-        function determineResult() {
-            // !!! ДАННЫЙ РЕЗУЛЬТАТ ИСПОЛЬЗУЕТСЯ ТОЛЬКО ДЛЯ ВИЗУАЛА !!!
-            // ФИНАНСОВЫЙ РЕЗУЛЬТАТ ОПРЕДЕЛЯЕТ БЭКЕНД
-            const isVisualWin = Math.random() < 0.3; // Чисто визуальный шанс
-            let finalSymbols = [];
-            let payoutData = 0; // Для Demo Mode
+        function stopSpin() {
+            // Выбираем случайные символы для визуала
+            const final = [
+                symbols[Math.floor(Math.random() * symbols.length)],
+                symbols[Math.floor(Math.random() * symbols.length)],
+                symbols[Math.floor(Math.random() * symbols.length)]
+            ];
 
-            if (isVisualWin) {
-                // Если визуальный выигрыш, выбираем случайный символ из выигрышных
-                const winSymbols = ['⚡', '💎', '7️⃣'];
-                const sym = winSymbols[Math.floor(Math.random() * winSymbols.length)];
-                finalSymbols = [sym, sym, sym];
-                payoutData = currentBet * payoutMap[sym];
-            } else {
-                // Визуальный проигрыш
-                finalSymbols = [
-                    symbols[Math.floor(Math.random() * symbols.length)],
-                    symbols[Math.floor(Math.random() * symbols.length)],
-                    symbols[Math.floor(Math.random() * symbols.length)]
-                ];
-            }
+            strips.forEach((strip, i) => {
+                clearInterval(strip.dataset.interval);
+                strip.classList.remove('spinning');
+                const idx = symbols.indexOf(final[i]);
+                const pos = (5 * symbols.length) + idx; // Позиция остановки
+                strip.style.transform = `translateY(${-pos * symbolHeight}px)`;
+                
+                setTimeout(() => {
+                    resultSymbols[i].textContent = final[i];
+                    resultSymbols[i].classList.add('active');
+                }, 400);
+            });
 
-            // 3. Останавливаем барабаны с уменьшенной задержкой
-            stopReel(0, finalSymbols[0]);
-            setTimeout(() => stopReel(1, finalSymbols[1]), STOP_DELAY);
-            setTimeout(() => stopReel(2, finalSymbols[2]), STOP_DELAY * 2);
-
-            // Финал
             setTimeout(() => {
                 isSpinning = false;
-                spinButton.disabled = false;
-
+                document.getElementById('spinButton').disabled = false;
                 if (isDemoMode) {
-                    let currentBal = parseInt(balanceDisplay.textContent);
-                    if (isVisualWin) {
-                        statusText.textContent = `DEMO WIN! (x${payoutMap[finalSymbols[0]]})`;
-                        // В Demo Mode обновляем баланс на клиенте
-                        balanceDisplay.textContent = currentBal - currentBet + payoutData;
-                    } else {
-                        statusText.textContent = "DEMO LOSE";
-                        // В Demo Mode списываем ставку на клиенте
-                        balanceDisplay.textContent = currentBal - currentBet;
-                    }
+                    statusText.textContent = "DEMO ЗАВЕРШЕНО";
                 } else {
-                    // В режиме Telegram отправляем только ставку
-                    statusText.textContent = "ОЖИДАНИЕ РЕЗУЛЬТАТА БОТА...";
-                    sendToBot();
+                    statusText.textContent = "ПРОВЕРЬТЕ БОТА...";
+                    // ОТПРАВЛЯЕМ СТАВКУ БОТУ
+                    Telegram.WebApp.sendData(JSON.stringify({ action: 'SPIN', bet: currentBet }));
                 }
-            }, SPIN_DURATION + (STOP_DELAY * 2) + SLOWDOWN_TIME + 100); 
+            }, 1000);
         }
 
-        function stopReel(index, targetSymbol) {
-            // Останавливает анимацию и фиксирует символ
-            clearInterval(spinIntervals[index]);
-            const strip = strips[index];
-            const resultEl = resultSymbols[index];
-            const targetIndex = symbols.indexOf(targetSymbol);
-            
-            const numCycles = Math.floor(Math.random() * 5) + 5; 
-            const landingSpot = numCycles * symbols.length; 
-            
-            const finalPositionIndex = (landingSpot + targetIndex);
-            const finalShiftY = -finalPositionIndex * symbolHeight;
-
-            strip.classList.remove('spinning'); 
-            strip.style.transform = `translateY(${finalShiftY}px)`;
-
-            setTimeout(() => {
-                resultEl.textContent = targetSymbol;
-                resultEl.classList.add('active'); 
-            }, SLOWDOWN_TIME); 
-        }
-
-
-        function sendToBot() {
-            if (isDemoMode) return;
-            const dataToSend = {
-                action: 'SPIN', // <--- ОТПРАВЛЯЕМ ТОЛЬКО ДЕЙСТВИЕ
-                bet: currentBet // <--- ОТПРАВЛЯЕМ ТОЛЬКО СТАВКУ
-            };
-            Telegram.WebApp.sendData(JSON.stringify(dataToSend));
-        }
-
-        // Запускаем проверку окружения при загрузке
         checkEnvironment();
-
     </script>
 </body>
 </html>
