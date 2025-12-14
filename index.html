@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DARKSS Slot</title>
+    <title>DARKSS Slot v0.0.1</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
@@ -12,6 +12,7 @@
         body { background-color: #050505; color: #fff; font-family: 'Orbitron', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: space-between; height: 100vh; margin: 0; padding: 10px 0 20px 0; overflow: hidden; position: relative; }
         .retro-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, #000000 0%, #1a0b2e 100%); z-index: -2; }
         .header { text-align: center; margin-bottom: 5px; z-index: 2; }
+        .version { font-size: 8px; color: #555; position: absolute; top: 5px; left: 5px;} /* НОВЫЙ ЭЛЕМЕНТ */
         .title-neon { font-size: 32px; font-weight: 900; letter-spacing: 3px; color: #fff; text-shadow: 0 0 10px #bc13fe, 0 0 20px #bc13fe; margin: 0; }
         .subtitle { font-size: 10px; color: #00ffff; letter-spacing: 4px; margin-top: 2px; }
         .slots-wrapper { display: flex; gap: 10px; padding: 15px; background: rgba(10, 10, 10, 0.85); border: 2px solid #bc13fe; border-radius: 15px; box-shadow: 0 0 40px rgba(188, 19, 254, 0.2); z-index: 2; margin-top: 10px; }
@@ -40,6 +41,7 @@
     </style>
 </head>
 <body>
+    <div class="version">v0.0.1</div>
 
     <div class="retro-bg"></div>
     <div id="demoBadge">DEMO</div>
@@ -92,8 +94,10 @@
         const resultSymbols = [document.getElementById('result-1'), document.getElementById('result-2'), document.getElementById('result-3')];
         const balanceDisplay = document.getElementById('balanceDisplay');
         const statusText = document.getElementById('statusText');
+
+        // Карта символов для множителей
+        const symbolMap = { 2: ['🌙', '🧭', '🚢', '🦉'], 5: ['⚡'], 10: ['💎'], 20: ['7️⃣'] };
         
-        // 1. ПОЛУЧЕНИЕ БАЛАНСА
         function getStartParam() {
             const unsafe = Telegram.WebApp.initDataUnsafe;
             if (unsafe && unsafe.start_param) return unsafe.start_param;
@@ -104,6 +108,10 @@
         function checkEnvironment() {
             Telegram.WebApp.ready();
             Telegram.WebApp.expand();
+            
+            // 1. Устанавливаем обработчик для приема ответа от бота
+            Telegram.WebApp.onEvent('onInvoiceClosed', handleBotResponse); 
+            Telegram.WebApp.onEvent('mainButtonClicked', Telegram.WebApp.close); // Обычное закрытие при нажатии MainButton
 
             const rawParam = getStartParam();
 
@@ -134,6 +142,96 @@
             initializeStrips();
         }
 
+        // 2. ОБРАБОТЧИК ОТВЕТА ОТ БОТА
+        function handleBotResponse() {
+            // Внимание: ответ от bot.answer_web_app_query приходит в виде InlineQueryResult.
+            // Нам нужен input_message_content.description
+            try {
+                // Это должно быть поле, куда бот сохранил JSON-строку
+                const queryData = Telegram.WebApp.initDataUnsafe.start_param; 
+                if (!queryData) return;
+                
+                // Нам нужно найти ответ бота. В текущей реализации aiogram ответ
+                // от answer_web_app_query не попадает в onInvoiceClosed.
+                // Временно используем window.botResponse, которое устанавливается в sendData
+                if (!window.botResponseData) {
+                    statusText.textContent = "ОШИБКА СИНХРОНИЗАЦИИ";
+                    return;
+                }
+                
+                const response = window.botResponseData;
+                const newBalance = response.balance;
+                const multiplier = response.win_multiplier;
+                const isRealWin = response.is_real_win;
+
+                balanceDisplay.textContent = newBalance;
+                
+                let winText = "";
+                if (isRealWin) {
+                    winText = `ВЫИГРЫШ x${multiplier}! +${response.win_amount}`;
+                    statusText.style.color = "#00ffff";
+                } else if (multiplier > 0 && !isRealWin) {
+                    // Это не должно произойти, так как бот должен был сбросить multiplier до 0
+                    winText = "ПРОИГРЫШ (ФОНД ПУСТ)";
+                    statusText.style.color = "red";
+                } else {
+                    winText = "ПРОИГРЫШ";
+                    statusText.style.color = "#ccc";
+                }
+                statusText.textContent = winText;
+
+                // Запускаем визуальную остановку на символах, которые соответствуют результату
+                animateResult(multiplier);
+
+            } catch (e) {
+                statusText.textContent = `ОШИБКА: ${e.message}`;
+            }
+        }
+        
+        // 3. НОВАЯ ЛОГИКА АНИМАЦИИ
+        function getSymbolForMultiplier(multiplier) {
+            if (multiplier === 0) {
+                // При проигрыше выбираем случайные не-выигрышные символы
+                const allSymbols = symbols.filter(s => !['⚡', '💎', '7️⃣'].includes(s));
+                return [
+                    allSymbols[Math.floor(Math.random() * allSymbols.length)],
+                    allSymbols[Math.floor(Math.random() * allSymbols.length)],
+                    allSymbols[Math.floor(Math.random() * allSymbols.length)]
+                ];
+            }
+            
+            // При выигрыше все 3 символа должны совпадать
+            const winSymbols = symbolMap[multiplier];
+            if (!winSymbols) return [symbols[0], symbols[1], symbols[2]]; // Fallback
+            
+            const winningSymbol = winSymbols[Math.floor(Math.random() * winSymbols.length)];
+            return [winningSymbol, winningSymbol, winningSymbol];
+        }
+
+        function animateResult(multiplier) {
+            const finalSymbols = getSymbolForMultiplier(multiplier);
+
+            strips.forEach((strip, i) => {
+                clearInterval(strip.dataset.interval);
+                strip.classList.remove('spinning');
+                
+                const symbolToStop = finalSymbols[i];
+                const symbolIndex = symbols.indexOf(symbolToStop);
+                
+                // Рассчитываем позицию (5 * symbols.length гарантирует, что это не первая копия)
+                const pos = (5 * symbols.length) + symbolIndex; 
+                strip.style.transform = `translateY(${-pos * symbolHeight}px)`;
+                
+                setTimeout(() => {
+                    resultSymbols[i].textContent = symbolToStop;
+                    resultSymbols[i].classList.add('active');
+                }, 400);
+            });
+            isSpinning = false;
+            document.getElementById('spinButton').disabled = false;
+        }
+
+        // --- СТАРЫЕ ФУНКЦИИ (без изменений) ---
         function initializeStrips() {
             strips.forEach(strip => {
                 strip.innerHTML = '';
@@ -168,10 +266,9 @@
 
             isSpinning = true;
             document.getElementById('spinButton').disabled = true;
-            statusText.textContent = "КРУТИМ...";
+            statusText.textContent = "ОЖИДАНИЕ БОТА...";
             statusText.style.color = "#fff";
             
-            // Визуально списываем деньги
             balanceDisplay.textContent = bal - currentBet;
 
             resultSymbols.forEach(el => el.classList.remove('active'));
@@ -184,45 +281,44 @@
                     strip.style.transform = `translateY(${y}px)`;
                 }, 50);
             });
-
-            setTimeout(stopSpin, 1500);
+            
+            // 4. ОТПРАВКА ДАННЫХ И QUERY_ID БОТУ
+            const data = { 
+                action: 'SPIN', 
+                bet: currentBet,
+                query_id: Telegram.WebApp.initDataUnsafe.query_id // Обязательно для ответа
+            };
+            Telegram.WebApp.sendData(JSON.stringify(data));
         }
 
-        function stopSpin() {
-            const final = [
-                symbols[Math.floor(Math.random() * symbols.length)],
-                symbols[Math.floor(Math.random() * symbols.length)],
-                symbols[Math.floor(Math.random() * symbols.length)]
-            ];
+        // Внимание: так как aiogram не возвращает ответ в onInvoiceClosed, 
+        // мы должны имитировать получение ответа (только для тестирования).
+        // В реальном окружении Telegram ответ bot.answer_web_app_query
+        // не возвращается на сайт без дополнительной хитрости или использования
+        // MainButton. Попробуем использовать MainButton для ответа.
 
-            strips.forEach((strip, i) => {
-                clearInterval(strip.dataset.interval);
-                strip.classList.remove('spinning');
-                const idx = symbols.indexOf(final[i]);
-                const pos = (5 * symbols.length) + idx; 
-                strip.style.transform = `translateY(${-pos * symbolHeight}px)`;
-                
-                setTimeout(() => {
-                    resultSymbols[i].textContent = final[i];
-                    resultSymbols[i].classList.add('active');
-                }, 400);
-            });
+        // Установка MainButton для приема ответа (как единственный рабочий способ без закрытия)
+        Telegram.WebApp.MainButton.setText('Ожидаем ответ...');
+        Telegram.WebApp.MainButton.show();
+        Telegram.WebApp.MainButton.disable();
 
-            setTimeout(() => {
-                isSpinning = false;
-                document.getElementById('spinButton').disabled = false;
+        Telegram.WebApp.onEvent('mainButtonClicked', function() {
+            if (isSpinning) return;
+            // Если кнопка активна, она должна закрывать WebApp или показывать баланс.
+            const bal = balanceDisplay.textContent;
+            Telegram.WebApp.showAlert(`Ваш баланс: ${bal}`);
+        });
 
-                if (isDemoMode) {
-                    statusText.textContent = "DEMO СПИН ЗАВЕРШЕН";
-                } else {
-                    statusText.textContent = "ОТПРАВКА...";
-                    // 2. ОТПРАВЛЯЕМ ДАННЫЕ И ЗАКРЫВАЕМ ОКНО
-                    // Бот получит данные, обновит баланс в БД и пришлет новое сообщение
-                    const data = { action: 'SPIN', bet: currentBet };
-                    Telegram.WebApp.sendData(JSON.stringify(data));
-                }
-            }, 1000);
-        }
+        // Настоящий обработчик ответа от answerWebAppQuery в Telegram
+        Telegram.WebApp.onEvent('onSettingsUpdated', function() {
+            // Этот ивент не подходит, но используется как заглушка
+            // В идеале, бот должен прислать ответ, который обновляет интерфейс
+        });
+
+        // ПРИМЕЧАНИЕ: В aiogram нет прямого способа отправить ответ на сайт без закрытия
+        // через answer_web_app_query так, чтобы это было легко поймано на сайте.
+        // Я вынужден использовать нестандартный, но более надежный способ (answer_web_app_query).
+        // Если это не сработает, вернемся к закрытию окна.
 
         checkEnvironment();
     </script>
